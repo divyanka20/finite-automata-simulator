@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finite Automata Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --surface3: #242840;
+    --border: #2a2f45;
+    --border2: #363d58;
+    --text: #e8eaf6;
+    --text2: #9098b8;
+    --text3: #5a6380;
+    --accent: #6c7fff;
+    --accent2: #4f5de8;
+    --green: #4ade80;
+    --green2: #16a34a;
+    --red: #f87171;
+    --red2: #dc2626;
+    --amber: #fbbf24;
+    --amber2: #d97706;
+    --purple: #c084fc;
+    --teal: #2dd4bf;
+    --start-color: #6c7fff;
+    --accept-color: #4ade80;
+    --current-color: #fbbf24;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .mode-toggle {
+    display: flex;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--text2);
+  }
+
+  .mode-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .btn:hover { border-color: var(--border2); color: var(--text); background: var(--surface3); }
+
+  .btn-accent {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .btn-accent:hover { background: var(--accent2); border-color: var(--accent2); color: white; }
+
+  .btn-green { background: rgba(74, 222, 128, 0.1); border-color: var(--green2); color: var(--green); }
+  .btn-green:hover { background: rgba(74, 222, 128, 0.2); color: var(--green); }
+
+  .btn-red { background: rgba(248, 113, 113, 0.1); border-color: var(--red2); color: var(--red); }
+  .btn-red:hover { background: rgba(248, 113, 113, 0.2); color: var(--red); }
+
+  /* LAYOUT */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 280px;
+    grid-template-rows: calc(100vh - 57px);
+    height: calc(100vh - 57px);
+  }
+
+  /* PANELS */
+  .panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+
+  .panel-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* STATES */
+  .state-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .state-item:hover { border-color: var(--border2); background: var(--surface3); }
+  .state-item.selected { border-color: var(--accent); background: rgba(108, 127, 255, 0.08); }
+
+  .state-dot {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .state-dot.start { border-color: var(--start-color); background: rgba(108,127,255,0.15); }
+  .state-dot.accept { border-color: var(--accept-color); background: rgba(74,222,128,0.1); }
+  .state-dot.start.accept {
+    border-color: var(--accept-color);
+    box-shadow: 0 0 0 2px var(--start-color);
+    background: rgba(74,222,128,0.1);
+  }
+  .state-dot.current { border-color: var(--current-color); background: rgba(251,191,36,0.2); animation: pulse-dot 1s infinite; }
+
+  @keyframes pulse-dot {
+    0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(251,191,36,0); }
+  }
+
+  .state-name {
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .state-badges {
+    display: flex;
+    gap: 3px;
+  }
+
+  .badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .badge-start { background: rgba(108,127,255,0.2); color: var(--accent); }
+  .badge-accept { background: rgba(74,222,128,0.15); color: var(--green); }
+
+  .state-actions {
+    display: flex;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .state-item:hover .state-actions { opacity: 1; }
+
+  .icon-btn {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    transition: all 0.1s;
+    flex-shrink: 0;
+  }
+
+  .icon-btn:hover { background: var(--surface3); color: var(--text); }
+  .icon-btn.danger:hover { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* TRANSITIONS TABLE */
+  .trans-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .trans-table th {
+    padding: 6px 8px;
+    background: var(--surface3);
+    color: var(--text3);
+    font-size: 10px;
+    font-weight: 600;
+    text-align: left;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .trans-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  .trans-table tr:last-child td { border-bottom: none; }
+  .trans-table tr:hover td { background: var(--surface2); }
+
+  .trans-cell-state { color: var(--accent); }
+  .trans-cell-symbol { color: var(--amber); }
+  .trans-cell-next { color: var(--green); }
+
+  .del-trans {
+    cursor: pointer;
+    color: var(--text3);
+    transition: color 0.1s;
+  }
+
+  .del-trans:hover { color: var(--red); }
+
+  /* MAIN CANVAS */
+  .canvas-area {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(108,127,255,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(192,132,252,0.03) 0%, transparent 40%);
+  }
+
+  .canvas-toolbar {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+  }
+
+  .tool-btn {
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .tool-btn:hover { border-color: var(--border2); color: var(--text); }
+  .tool-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,127,255,0.1); }
+
+  #fa-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* D3 Graph Styles */
+  .node-group { cursor: pointer; }
+
+  .node-circle {
+    stroke-width: 2;
+    transition: filter 0.2s;
+  }
+
+  .node-accept-ring {
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .node-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    fill: var(--text);
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .edge-line {
+    stroke-width: 2;
+    fill: none;
+    marker-end: url(#arrow);
+  }
+
+  .edge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    fill: var(--text2);
+    text-anchor: middle;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .edge-label-bg {
+    fill: var(--bg);
+  }
+
+  .start-arrow { stroke: var(--start-color); stroke-width: 2; }
+
+  /* INPUT + SIMULATION */
+  .sim-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .input-field {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .input-field:focus { border-color: var(--accent); }
+  .input-field.error { border-color: var(--red); }
+  .input-field::placeholder { color: var(--text3); }
+
+  .sim-controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .speed-label {
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    flex: 1;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  /* RESULT */
+  .result-box {
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+    display: none;
+  }
+
+  .result-box.accepted {
+    background: rgba(74, 222, 128, 0.08);
+    border-color: var(--green2);
+    display: block;
+  }
+
+  .result-box.rejected {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: var(--red2);
+    display: block;
+  }
+
+  .result-label {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .result-label.accepted { color: var(--green); }
+  .result-label.rejected { color: var(--red); }
+
+  .result-detail {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* TRACE LOG */
+  .trace-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .trace-entry {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    transition: background 0.2s;
+  }
+
+  .trace-entry.active { background: rgba(108,127,255,0.06); }
+
+  .trace-step {
+    color: var(--text3);
+    min-width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+    font-size: 10px;
+    padding-top: 1px;
+  }
+
+  .trace-content { flex: 1; }
+
+  .trace-sym { color: var(--amber); font-weight: 600; }
+  .trace-state { color: var(--accent); }
+  .trace-next { color: var(--green); }
+  .trace-reject { color: var(--red); }
+  .trace-eps { color: var(--purple); }
+
+  /* ADD FORM */
+  .form-group { margin-bottom: 10px; }
+
+  .form-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 5px;
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  select, .select {
+    width: 100%;
+    padding: 7px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a6380' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  .checkbox-group {
+    display: flex;
+    gap: 12px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px; height: 14px;
+  }
+
+  /* ALPHABET DISPLAY */
+  .alphabet-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .pill {
+    padding: 2px 8px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text2);
+  }
+
+  .pill.eps { color: var(--purple); border-color: rgba(192,132,252,0.3); background: rgba(192,132,252,0.08); }
+
+  /* EXAMPLES */
+  .example-btn {
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 5px;
+  }
+
+  .example-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,127,255,0.06); }
+
+  /* TOOLTIP */
+  .tooltip {
+    position: absolute;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 200;
+    display: none;
+    max-width: 200px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  /* PROGRESS BAR */
+  .sim-progress {
+    display: flex;
+    gap: 3px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    min-height: 12px;
+  }
+
+  .progress-sym {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    transition: all 0.2s;
+  }
+
+  .progress-sym.done { background: var(--surface3); color: var(--text2); }
+  .progress-sym.active { background: rgba(251,191,36,0.2); border-color: var(--amber); color: var(--amber); }
+  .progress-sym.accepted { background: rgba(74,222,128,0.15); border-color: var(--green2); color: var(--green); }
+  .progress-sym.rejected { background: rgba(248,113,113,0.15); border-color: var(--red2); color: var(--red); }
+
+  /* NFA states display */
+  .nfa-states {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .nfa-state-pill {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border);
+    background: rgba(108,127,255,0.1);
+    color: var(--accent);
+    transition: all 0.2s;
+  }
+
+  .nfa-state-pill.accepting {
+    background: rgba(74,222,128,0.1);
+    border-color: var(--green2);
+    color: var(--green);
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .modal-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+  /* Empty states */
+  .empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 12px;
+  }
+
+  .empty-state-icon { font-size: 24px; margin-bottom: 6px; }
+
+  .info-text {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .app-layout { grid-template-columns: 260px 1fr 260px; }
+  }
+
+  @media (max-width: 700px) {
+    .app-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 400px auto;
+      height: auto;
+    }
+    .panel { max-height: 300px; }
+  }
+
+  .hidden { display: none !important; }
+
+  .nfa-info {
+    background: rgba(192,132,252,0.08);
+    border: 1px solid rgba(192,132,252,0.2);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--purple);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .epsilon-closure-box {
+    background: rgba(192,132,252,0.06);
+    border: 1px solid rgba(192,132,252,0.15);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--purple);
+    margin-top: 8px;
+    display: none;
+  }
+
+  .epsilon-closure-box.visible { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⟶</div>
+    <div>
+      <div class="logo-text">Finite Automata Simulator</div>
+      <div class="logo-sub">DFA · NFA · ε-NFA</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="dfa-mode-btn" onclick="setMode('DFA')">DFA</button>
+      <button class="mode-btn" id="nfa-mode-btn" onclick="setMode('NFA')">NFA</button>
+    </div>
+    <button class="btn" onclick="saveJSON()">⬇ Export</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()">⬆ Import</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="loadJSON(event)">
+    <button class="btn" onclick="clearAll()">✕ Clear</button>
+  </div>
+</header>
+
+<div class="app-layout">
+  <!-- LEFT PANEL: States + Transitions -->
+  <div class="panel" id="left-panel">
+
+    <!-- States -->
+    <div class="panel-section">
+      <div class="panel-title">States</div>
+
+      <div id="states-list"></div>
+
+      <button class="btn btn-accent" style="width:100%;justify-content:center;margin-top:8px;" onclick="openAddStateModal()">
+        + Add State
+      </button>
+    </div>
+
+    <!-- Add Transition -->
+    <div class="panel-section">
+      <div class="panel-title">Add Transition</div>
+      <div class="nfa-info hidden" id="nfa-trans-info">ε-transitions allowed in NFA mode</div>
+
+      <div class="form-group">
+        <label class="form-label">From State</label>
+        <select id="trans-from"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Symbol <span id="eps-hint" class="hidden" style="color:var(--purple);font-size:10px;">(use ε for epsilon)</span></label>
+        <input class="input-field" id="trans-symbol" placeholder="e.g. a, b, ε" style="width:100%;" maxlength="5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">To State</label>
+        <select id="trans-to"></select>
+      </div>
+      <button class="btn btn-accent" style="width:100%;justify-content:center;" onclick="addTransition()">+ Add Transition</button>
+    </div>
+
+    <!-- Alphabet -->
+    <div class="panel-section">
+      <div class="panel-title">Alphabet Σ</div>
+      <div class="alphabet-pills" id="alphabet-display">
+        <span class="info-text">Add transitions to build alphabet</span>
+      </div>
+    </div>
+
+    <!-- Transitions Table -->
+    <div class="panel-section" style="flex:1;">
+      <div class="panel-title">Transitions δ</div>
+      <div id="transitions-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">→</div>
+          <div>No transitions yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Canvas -->
+  <div class="canvas-area">
+    <div class="canvas-toolbar">
+      <button class="tool-btn active" id="tool-select" onclick="setTool('select')">↖ Select</button>
+      <button class="tool-btn" id="tool-move" onclick="setTool('move')">✥ Move</button>
+    </div>
+    <svg id="fa-canvas">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L8,3 z" fill="#5a6380"/>
+        </marker>
+        <marker id="arrow-current" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L8,3 z" fill="#fbbf24"/>
+        </marker>
+        <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L8,3 z" fill="#6c7fff"/>
+        </marker>
+        <marker id="arrow-start" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L8,3 z" fill="#6c7fff"/>
+        </marker>
+      </defs>
+    </svg>
+    <div class="status-bar" id="status-bar">Click canvas to add states · Double-click state to edit</div>
+  </div>
+
+  <!-- RIGHT PANEL: Simulation -->
+  <div class="panel sim-panel">
+
+    <!-- Examples -->
+    <div class="panel-section">
+      <div class="panel-title">Examples</div>
+      <button class="example-btn" onclick="loadExample('ends01')">DFA: Strings ending with "01"</button>
+      <button class="example-btn" onclick="loadExample('even0')">DFA: Even number of 0s</button>
+      <button class="example-btn" onclick="loadExample('nfa01')">NFA: Contains "01"</button>
+      <button class="example-btn" onclick="loadExample('nfaEps')">ε-NFA: (ab)* | a</button>
+    </div>
+
+    <!-- Input + Sim -->
+    <div class="panel-section">
+      <div class="panel-title">Simulation</div>
+      <div class="input-row">
+        <input class="input-field" id="sim-input" placeholder="Enter string..." onkeydown="if(event.key==='Enter')runSim()">
+        <button class="btn btn-accent" onclick="runSim()">Run</button>
+      </div>
+
+      <div class="sim-progress" id="sim-progress"></div>
+
+      <div class="sim-controls">
+        <button class="btn btn-green" id="btn-step" onclick="stepSim()" disabled>⏭ Step</button>
+        <button class="btn" id="btn-autoplay" onclick="toggleAutoplay()" disabled>▶ Play</button>
+        <button class="btn btn-red" id="btn-reset" onclick="resetSim()" disabled>↺ Reset</button>
+      </div>
+
+      <div class="speed-label">
+        Speed <input type="range" min="1" max="5" value="3" id="speed-slider" style="width:80px;">
+      </div>
+
+      <div class="result-box" id="result-box">
+        <div class="result-label" id="result-label"></div>
+        <div class="result-detail" id="result-detail"></div>
+      </div>
+
+      <!-- NFA current states -->
+      <div class="nfa-states hidden" id="nfa-current-states"></div>
+
+      <!-- Epsilon closure -->
+      <div class="epsilon-closure-box" id="eps-closure-box">
+        <div style="color:var(--text3);margin-bottom:3px;">ε-closure</div>
+        <div id="eps-closure-content"></div>
+      </div>
+    </div>
+
+    <!-- Trace Log -->
+    <div class="panel-section" style="padding-bottom:6px;">
+      <div class="panel-title">Trace Log</div>
+    </div>
+    <div class="trace-log" id="trace-log">
+      <div class="empty-state">
+        <div class="empty-state-icon">⌛</div>
+        <div>No simulation yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add State Modal -->
+<div class="modal-overlay" id="add-state-modal">
+  <div class="modal">
+    <div class="modal-title">➕ Add State</div>
+    <div class="form-group">
+      <label class="form-label">State Name</label>
+      <input class="input-field" id="new-state-name" placeholder="e.g. q0, q1, A, B" style="width:100%;"
+        onkeydown="if(event.key==='Enter')confirmAddState()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Properties</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="new-state-start"> Start state
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="new-state-accept"> Accepting state
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('add-state-modal')">Cancel</button>
+      <button class="btn btn-accent" onclick="confirmAddState()">Add State</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit State Modal -->
+<div class="modal-overlay" id="edit-state-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit State</div>
+    <div class="form-group">
+      <label class="form-label">State Name</label>
+      <input class="input-field" id="edit-state-name" placeholder="State name" style="width:100%;"
+        onkeydown="if(event.key==='Enter')confirmEditState()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Properties</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-state-start"> Start state
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-state-accept"> Accepting state
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('edit-state-modal')">Cancel</button>
+      <button class="btn btn-accent" onclick="confirmEditState()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ================== STATE ==================
+let mode = 'DFA'; // 'DFA' or 'NFA'
+let states = []; // [{id, name, isStart, isAccept, x, y}]
+let transitions = []; // [{from, symbol, to}]
+let selectedState = null;
+let editingStateId = null;
+let currentTool = 'select';
+let stateIdCounter = 0;
+
+// Simulation
+let simInput = '';
+let simStep = 0;
+let simActive = false;
+let simLog = [];
+let autoplayTimer = null;
+let nfaCurrentStates = new Set();
+let dfaCurrentState = null;
+
+// D3
+let svg, g, width, height;
+let simulation;
+let nodeData = [], edgeData = [];
+
+// ================== INIT ==================
+function init() {
+  svg = d3.select('#fa-canvas');
+  const rect = document.getElementById('fa-canvas').getBoundingClientRect();
+  width = rect.width;
+  height = rect.height;
+
+  // Canvas click to add state
+  svg.on('click', function(event) {
+    if (event.target !== this && event.target.tagName === 'svg') return;
+    if (currentTool !== 'select') return;
+    const [x, y] = d3.pointer(event);
+    if (event.target.tagName === 'svg' || event.target.tagName === 'rect') {
+      // Only add if clicking empty space
+    }
+  });
+
+  svg.on('dblclick', function(event) {
+    if (event.target.tagName !== 'svg') return;
+    const [x, y] = d3.pointer(event);
+    quickAddState(x, y);
+  });
+
+  // Main container
+  g = svg.append('g').attr('class', 'main-g');
+
+  // Zoom
+  const zoom = d3.zoom()
+    .scaleExtent([0.2, 3])
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    });
+  svg.call(zoom);
+
+  renderGraph();
+  updateUI();
+}
+
+// ================== MODE ==================
+function setMode(m) {
+  mode = m;
+  document.getElementById('dfa-mode-btn').classList.toggle('active', m === 'DFA');
+  document.getElementById('nfa-mode-btn').classList.toggle('active', m === 'NFA');
+  document.getElementById('nfa-trans-info').classList.toggle('hidden', m === 'DFA');
+  document.getElementById('eps-hint').classList.toggle('hidden', m === 'DFA');
+  resetSim();
+  updateUI();
+}
+
+// ================== STATES ==================
+function openAddStateModal() {
+  document.getElementById('new-state-name').value = `q${stateIdCounter}`;
+  document.getElementById('new-state-start').checked = states.length === 0;
+  document.getElementById('new-state-accept').checked = false;
+  openModal('add-state-modal');
+  setTimeout(() => document.getElementById('new-state-name').select(), 50);
+}
+
+function confirmAddState() {
+  const name = document.getElementById('new-state-name').value.trim();
+  if (!name) return;
+  if (states.find(s => s.name === name)) { alert('State name already exists'); return; }
+
+  const isStart = document.getElementById('new-state-start').checked;
+  const isAccept = document.getElementById('new-state-accept').checked;
+
+  if (isStart) states.forEach(s => s.isStart = false);
+
+  const rect = document.getElementById('fa-canvas').getBoundingClientRect();
+  const cx = rect.width / 2 + (Math.random() - 0.5) * 200;
+  const cy = rect.height / 2 + (Math.random() - 0.5) * 150;
+
+  states.push({ id: stateIdCounter++, name, isStart, isAccept, x: cx, y: cy });
+  closeModal('add-state-modal');
+  renderGraph();
+  updateUI();
+}
+
+function quickAddState(x, y) {
+  const name = `q${stateIdCounter}`;
+  const isStart = states.length === 0;
+  states.push({ id: stateIdCounter++, name, isStart: isStart, isAccept: false, x, y });
+  renderGraph();
+  updateUI();
+}
+
+function deleteState(id) {
+  states = states.filter(s => s.id !== id);
+  transitions = transitions.filter(t => t.from !== id && t.to !== id);
+  renderGraph();
+  updateUI();
+}
+
+function openEditState(id) {
+  const s = states.find(st => st.id === id);
+  if (!s) return;
+  editingStateId = id;
+  document.getElementById('edit-state-name').value = s.name;
+  document.getElementById('edit-state-start').checked = s.isStart;
+  document.getElementById('edit-state-accept').checked = s.isAccept;
+  openModal('edit-state-modal');
+  setTimeout(() => document.getElementById('edit-state-name').select(), 50);
+}
+
+function confirmEditState() {
+  const name = document.getElementById('edit-state-name').value.trim();
+  if (!name) return;
+  if (states.find(s => s.name === name && s.id !== editingStateId)) { alert('Name exists'); return; }
+
+  const s = states.find(st => st.id === editingStateId);
+  if (!s) return;
+
+  const wasStart = s.isStart;
+  s.name = name;
+  s.isStart = document.getElementById('edit-state-start').checked;
+  s.isAccept = document.getElementById('edit-state-accept').checked;
+
+  if (s.isStart && !wasStart) states.forEach(st => { if (st.id !== s.id) st.isStart = false; });
+
+  closeModal('edit-state-modal');
+  renderGraph();
+  updateUI();
+}
+
+function toggleStart(id) {
+  const s = states.find(st => st.id === id);
+  if (!s) return;
+  states.forEach(st => st.isStart = false);
+  s.isStart = true;
+  renderGraph();
+  updateUI();
+}
+
+function toggleAccept(id) {
+  const s = states.find(st => st.id === id);
+  if (!s) return;
+  s.isAccept = !s.isAccept;
+  renderGraph();
+  updateUI();
+}
+
+// ================== TRANSITIONS ==================
+function addTransition() {
+  const fromId = parseInt(document.getElementById('trans-from').value);
+  const symbol = document.getElementById('trans-symbol').value.trim();
+  const toId = parseInt(document.getElementById('trans-to').value);
+
+  if (isNaN(fromId) || isNaN(toId) || !symbol) {
+    alert('Please fill all fields'); return;
+  }
+
+  if (symbol !== 'ε' && symbol !== 'eps' && !/^[a-zA-Z0-9_\-\.]+$/.test(symbol)) {
+    alert('Invalid symbol'); return;
+  }
+
+  const normalSym = (symbol === 'eps') ? 'ε' : symbol;
+
+  // DFA check: exactly one transition per (state, symbol)
+  if (mode === 'DFA') {
+    const exists = transitions.find(t => t.from === fromId && t.symbol === normalSym);
+    if (exists) {
+      alert(`DFA already has a transition from ${states.find(s=>s.id===fromId)?.name} on "${normalSym}"`);
+      return;
+    }
+  }
+
+  // Prevent exact duplicate
+  if (transitions.find(t => t.from === fromId && t.symbol === normalSym && t.to === toId)) {
+    alert('Transition already exists'); return;
+  }
+
+  transitions.push({ from: fromId, symbol: normalSym, to: toId });
+  document.getElementById('trans-symbol').value = '';
+  renderGraph();
+  updateUI();
+}
+
+function deleteTransition(from, symbol, to) {
+  transitions = transitions.filter(t => !(t.from === from && t.symbol === symbol && t.to === to));
+  renderGraph();
+  updateUI();
+}
+
+// ================== ALPHABET ==================
+function getAlphabet() {
+  const syms = new Set();
+  transitions.forEach(t => { if (t.symbol !== 'ε') syms.add(t.symbol); });
+  return [...syms].sort();
+}
+
+// ================== D3 RENDER ==================
+function renderGraph() {
+  g.selectAll('*').remove();
+
+  if (states.length === 0) {
+    setStatus('Double-click canvas to add states · Use left panel for more options');
+    return;
+  }
+
+  setStatus(`${states.length} state${states.length>1?'s':''} · ${transitions.length} transition${transitions.length!==1?'s':''} · Mode: ${mode}`);
+
+  // Build edge groups (collapse parallel edges by from-to pair)
+  const edgeMap = {};
+  transitions.forEach(t => {
+    const key = `${t.from}-${t.to}`;
+    if (!edgeMap[key]) edgeMap[key] = { from: t.from, to: t.to, symbols: [] };
+    edgeMap[key].symbols.push(t.symbol);
+  });
+
+  const R = 28; // node radius
+
+  // Draw edges first
+  Object.values(edgeMap).forEach(edge => {
+    const fromState = states.find(s => s.id === edge.from);
+    const toState = states.find(s => s.id === edge.to);
+    if (!fromState || !toState) return;
+
+    const isSelf = edge.from === edge.to;
+    const revKey = `${edge.to}-${edge.from}`;
+    const hasBidirectional = edgeMap[revKey] && edge.from !== edge.to;
+
+    const label = edge.symbols.join(',');
+    const isActive = isEdgeActive(edge);
+    const edgeClass = isActive ? 'edge-active' : 'edge-normal';
+    const edgeColor = isActive ? '#6c7fff' : '#3a4060';
+    const markerStr = isActive ? 'url(#arrow-active)' : 'url(#arrow)';
+
+    let pathEl;
+
+    if (isSelf) {
+      // Self-loop
+      const lx = fromState.x;
+      const ly = fromState.y - R;
+      const cx1 = lx - 40, cy1 = ly - 50;
+      const cx2 = lx + 40, cy2 = ly - 50;
+      pathEl = g.append('path')
+        .attr('d', `M${lx-10},${ly} C${cx1},${cy1} ${cx2},${cy2} ${lx+10},${ly}`)
+        .attr('fill', 'none')
+        .attr('stroke', edgeColor)
+        .attr('stroke-width', isActive ? 2.5 : 1.5)
+        .attr('marker-end', markerStr);
+
+      // Label
+      g.append('rect')
+        .attr('x', lx - 16).attr('y', ly - 72)
+        .attr('width', label.length * 7 + 8).attr('height', 16)
+        .attr('rx', 3).attr('fill', '#0d0f14').attr('opacity', 0.9);
+      g.append('text')
+        .attr('x', lx).attr('y', ly - 63)
+        .attr('text-anchor', 'middle')
+        .attr('fill', isActive ? '#6c7fff' : '#9098b8')
+        .attr('font-size', '11')
+        .attr('font-family', 'JetBrains Mono, monospace')
+        .text(label);
+
+    } else if (hasBidirectional) {
+      // Curved bidirectional
+      const dx = toState.x - fromState.x;
+      const dy = toState.y - fromState.y;
+      const len = Math.sqrt(dx*dx+dy*dy);
+      const nx = -dy/len, ny = dx/len;
+      const curve = 30;
+      const mx = (fromState.x+toState.x)/2 + nx*curve;
+      const my = (fromState.y+toState.y)/2 + ny*curve;
+
+      const angle = Math.atan2(toState.y - my, toState.x - mx);
+      const ex = toState.x - R * Math.cos(angle);
+      const ey = toState.y - R * Math.sin(angle);
+
+      const startAngle = Math.atan2(fromState.y - my, fromState.x - mx);
+      const sx = fromState.x - R * Math.cos(startAngle);
+      const sy = fromState.y - R * Math.sin(startAngle);
+
+      pathEl = g.append('path')
+        .attr('d', `M${sx},${sy} Q${mx},${my} ${ex},${ey}`)
+        .attr('fill', 'none')
+        .attr('stroke', edgeColor)
+        .attr('stroke-width', isActive ? 2.5 : 1.5)
+        .attr('marker-end', markerStr);
+
+      g.append('rect')
+        .attr('x', mx - label.length*3.5 - 4).attr('y', my - 10)
+        .attr('width', label.length*7+8).attr('height', 16)
+        .attr('rx', 3).attr('fill', '#0d0f14').attr('opacity', 0.9);
+      g.append('text')
+        .attr('x', mx).attr('y', my)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', isActive ? '#6c7fff' : '#9098b8')
+        .attr('font-size', '11').attr('font-family', 'JetBrains Mono, monospace')
+        .text(label);
+
+    } else {
+      // Straight edge
+      const dx = toState.x - fromState.x;
+      const dy = toState.y - fromState.y;
+      const len = Math.sqrt(dx*dx+dy*dy);
+      const ux = dx/len, uy = dy/len;
+      const sx = fromState.x + R * ux;
+      const sy = fromState.y + R * uy;
+      const ex = toState.x - R * ux;
+      const ey = toState.y - R * uy;
+
+      pathEl = g.append('line')
+        .attr('x1', sx).attr('y1', sy).attr('x2', ex).attr('y2', ey)
+        .attr('stroke', edgeColor)
+        .attr('stroke-width', isActive ? 2.5 : 1.5)
+        .attr('marker-end', markerStr);
+
+      const mx = (sx+ex)/2, my = (sy+ey)/2;
+      const nx = -uy, ny = ux;
+      const lx = mx + nx*14, ly = my + ny*14;
+
+      g.append('rect')
+        .attr('x', lx - label.length*3.5 - 4).attr('y', ly - 10)
+        .attr('width', label.length*7+8).attr('height', 16)
+        .attr('rx', 3).attr('fill', '#0d0f14').attr('opacity', 0.9);
+      g.append('text')
+        .attr('x', lx).attr('y', ly)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', isActive ? '#6c7fff' : '#9098b8')
+        .attr('font-size', '11').attr('font-family', 'JetBrains Mono, monospace')
+        .text(label);
+    }
+  });
+
+  // Draw start arrow for start state
+  const startState = states.find(s => s.isStart);
+  if (startState) {
+    g.append('line')
+      .attr('x1', startState.x - R - 35).attr('y1', startState.y)
+      .attr('x2', startState.x - R - 2).attr('y2', startState.y)
+      .attr('stroke', '#6c7fff').attr('stroke-width', 2)
+      .attr('marker-end', 'url(#arrow-start)');
+    g.append('text')
+      .attr('x', startState.x - R - 38).attr('y', startState.y - 5)
+      .attr('text-anchor', 'end')
+      .attr('fill', '#6c7fff').attr('font-size', '10')
+      .attr('font-family', 'JetBrains Mono, monospace')
+      .text('start');
+  }
+
+  // Draw nodes
+  states.forEach(state => {
+    const isCurrent = isStateCurrent(state.id);
+    const nodeGroup = g.append('g')
+      .attr('class', 'node-group')
+      .attr('transform', `translate(${state.x},${state.y})`)
+      .style('cursor', 'grab');
+
+    // Glow for current state
+    if (isCurrent) {
+      nodeGroup.append('circle')
+        .attr('r', R + 8)
+        .attr('fill', 'none')
+        .attr('stroke', '#fbbf24')
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.3);
+    }
+
+    // Outer accept ring
+    if (state.isAccept) {
+      nodeGroup.append('circle')
+        .attr('r', R + 5)
+        .attr('fill', 'none')
+        .attr('stroke', isCurrent ? '#fbbf24' : '#4ade80')
+        .attr('stroke-width', 1.5)
+        .attr('opacity', isCurrent ? 0.8 : 0.6);
+    }
+
+    // Main circle
+    let fillColor = '#1c2030';
+    let strokeColor = '#363d58';
+    let strokeWidth = 2;
+
+    if (isCurrent) {
+      fillColor = 'rgba(251,191,36,0.12)';
+      strokeColor = '#fbbf24';
+      strokeWidth = 2.5;
+    } else if (state.isStart && state.isAccept) {
+      fillColor = 'rgba(74,222,128,0.1)';
+      strokeColor = '#4ade80';
+    } else if (state.isStart) {
+      fillColor = 'rgba(108,127,255,0.1)';
+      strokeColor = '#6c7fff';
+    } else if (state.isAccept) {
+      fillColor = 'rgba(74,222,128,0.1)';
+      strokeColor = '#4ade80';
+    }
+
+    nodeGroup.append('circle')
+      .attr('r', R)
+      .attr('fill', fillColor)
+      .attr('stroke', strokeColor)
+      .attr('stroke-width', strokeWidth);
+
+    // Label
+    nodeGroup.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('fill', isCurrent ? '#fbbf24' : '#e8eaf6')
+      .attr('font-size', state.name.length > 3 ? '10' : '13')
+      .attr('font-weight', '500')
+      .attr('font-family', 'JetBrains Mono, monospace')
+      .text(state.name);
+
+    // Drag behavior
+    nodeGroup.call(d3.drag()
+      .on('start', function(event) { d3.select(this).style('cursor', 'grabbing'); })
+      .on('drag', function(event) {
+        state.x = event.x;
+        state.y = event.y;
+        renderGraph();
+      })
+      .on('end', function(event) { d3.select(this).style('cursor', 'grab'); })
+    );
+
+    // Click to select/edit
+    nodeGroup.on('click', function(event) {
+      event.stopPropagation();
+      selectState(state.id);
+    });
+
+    nodeGroup.on('dblclick', function(event) {
+      event.stopPropagation();
+      openEditState(state.id);
+    });
+
+    // Tooltip on hover
+    nodeGroup.on('mouseenter', function(event) {
+      let info = `State: ${state.name}`;
+      if (state.isStart) info += '\n▶ Start state';
+      if (state.isAccept) info += '\n✓ Accepting state';
+      const out = transitions.filter(t => t.from === state.id);
+      if (out.length) info += `\n${out.length} outgoing transition${out.length>1?'s':''}`;
+      showTooltip(event, info);
+    }).on('mousemove', function(event) {
+      moveTooltip(event);
+    }).on('mouseleave', function() {
+      hideTooltip();
+    });
+  });
+}
+
+function isStateCurrent(id) {
+  if (!simActive && simStep === 0) return false;
+  if (mode === 'DFA') return dfaCurrentState === id;
+  return nfaCurrentStates.has(id);
+}
+
+function isEdgeActive(edge) {
+  if (!simActive && simStep === 0) return false;
+  if (simStep <= 0) return false;
+  // Check last log entry
+  if (simLog.length === 0) return false;
+  const last = simLog[simLog.length - 1];
+  if (!last) return false;
+  if (mode === 'DFA') {
+    return last.from === edge.from && last.symbol === edge.symbols[0] && edge.symbols.includes(last.symbol);
+  }
+  return false;
+}
+
+function selectState(id) {
+  selectedState = id;
+  updateStatesList();
+}
+
+// ================== UI UPDATE ==================
+function updateUI() {
+  updateStatesList();
+  updateTransitionSelects();
+  updateTransitionsList();
+  updateAlphabetDisplay();
+}
+
+function updateStatesList() {
+  const el = document.getElementById('states-list');
+  if (states.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">◯</div><div>No states yet</div></div>';
+    return;
+  }
+
+  el.innerHTML = states.map(s => {
+    const isCurrent = isStateCurrent(s.id);
+    const dotClass = `state-dot${s.isStart?' start':''}${s.isAccept?' accept':''}${isCurrent?' current':''}`;
+    return `
+      <div class="state-item${s.id===selectedState?' selected':''}" onclick="selectState(${s.id})">
+        <div class="${dotClass}"></div>
+        <span class="state-name">${s.name}</span>
+        <div class="state-badges">
+          ${s.isStart?'<span class="badge badge-start">S</span>':''}
+          ${s.isAccept?'<span class="badge badge-accept">F</span>':''}
+        </div>
+        <div class="state-actions">
+          <button class="icon-btn" title="Edit" onclick="event.stopPropagation();openEditState(${s.id})">✏</button>
+          <button class="icon-btn" title="Toggle start" onclick="event.stopPropagation();toggleStart(${s.id})">▶</button>
+          <button class="icon-btn" title="Toggle accept" onclick="event.stopPropagation();toggleAccept(${s.id})">✓</button>
+          <button class="icon-btn danger" title="Delete" onclick="event.stopPropagation();deleteState(${s.id})">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateTransitionSelects() {
+  const fromSel = document.getElementById('trans-from');
+  const toSel = document.getElementById('trans-to');
+  const opts = states.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  fromSel.innerHTML = opts || '<option value="">-- add states first --</option>';
+  toSel.innerHTML = opts || '<option value="">-- add states first --</option>';
+}
+
+function updateTransitionsList() {
+  const el = document.getElementById('transitions-list');
+  if (transitions.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">→</div><div>No transitions yet</div></div>';
+    return;
+  }
+
+  const rows = transitions.map(t => {
+    const fromName = states.find(s => s.id === t.from)?.name || '?';
+    const toName = states.find(s => s.id === t.to)?.name || '?';
+    const symDisplay = t.symbol === 'ε' ? `<span style="color:var(--purple)">ε</span>` : `<span class="trans-cell-symbol">${t.symbol}</span>`;
+    return `<tr>
+      <td class="trans-cell-state">${fromName}</td>
+      <td>${symDisplay}</td>
+      <td class="trans-cell-next">${toName}</td>
+      <td class="del-trans" onclick="deleteTransition(${t.from},'${t.symbol}',${t.to})" title="Delete">✕</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table class="trans-table">
+    <thead><tr><th>From</th><th>On</th><th>To</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function updateAlphabetDisplay() {
+  const el = document.getElementById('alphabet-display');
+  const alpha = getAlphabet();
+  const hasEps = transitions.some(t => t.symbol === 'ε');
+
+  if (alpha.length === 0 && !hasEps) {
+    el.innerHTML = '<span class="info-text">Add transitions to build alphabet</span>';
+    return;
+  }
+
+  let html = alpha.map(s => `<span class="pill">${s}</span>`).join('');
+  if (hasEps) html += `<span class="pill eps">ε</span>`;
+  el.innerHTML = html;
+}
+
+// ================== SIMULATION ==================
+function runSim() {
+  const input = document.getElementById('sim-input').value;
+  simInput = input;
+  simStep = 0;
+  simLog = [];
+  simActive = true;
+
+  document.getElementById('result-box').className = 'result-box';
+  document.getElementById('trace-log').innerHTML = '';
+  document.getElementById('nfa-current-states').classList.add('hidden');
+  document.getElementById('eps-closure-box').classList.remove('visible');
+
+  if (states.length === 0) { alert('No states defined'); return; }
+  const startState = states.find(s => s.isStart);
+  if (!startState) { alert('No start state defined'); return; }
+
+  // Validate alphabet (skip epsilon)
+  const alpha = getAlphabet();
+  if (alpha.length > 0) {
+    for (const ch of input) {
+      if (!alpha.includes(ch)) {
+        document.getElementById('sim-input').classList.add('error');
+        setTimeout(() => document.getElementById('sim-input').classList.remove('error'), 1000);
+        alert(`Character "${ch}" not in alphabet {${alpha.join(', ')}}`);
+        return;
+      }
+    }
+  }
+
+  if (mode === 'DFA') {
+    dfaCurrentState = startState.id;
+    nfaCurrentStates = new Set();
+  } else {
+    // NFA: start with ε-closure of start state
+    nfaCurrentStates = epsClosure(new Set([startState.id]));
+    dfaCurrentState = null;
+    showNFAStates();
+  }
+
+  updateProgress(-1);
+  addTraceEntry({ type: 'start', state: startState.name, nfaStates: [...nfaCurrentStates].map(id => states.find(s=>s.id===id)?.name) });
+
+  document.getElementById('btn-step').disabled = false;
+  document.getElementById('btn-autoplay').disabled = false;
+  document.getElementById('btn-reset').disabled = false;
+
+  renderGraph();
+  updateStatesList();
+
+  setStatus(`Simulation started · Input: "${input}" · ${input.length} symbol${input.length!==1?'s':''}`);
+}
+
+function stepSim() {
+  if (!simActive) return;
+  if (simStep >= simInput.length) { finishSim(); return; }
+
+  const sym = simInput[simStep];
+  updateProgress(simStep);
+
+  if (mode === 'DFA') {
+    const trans = transitions.find(t => t.from === dfaCurrentState && t.symbol === sym);
+    const fromName = states.find(s => s.id === dfaCurrentState)?.name || '?';
+
+    if (!trans) {
+      simLog.push({ from: dfaCurrentState, symbol: sym, to: null });
+      addTraceEntry({ type: 'dead', symbol: sym, from: fromName });
+      dfaCurrentState = null;
+      simStep = simInput.length; // end
+      finishSim();
+      return;
+    }
+
+    simLog.push({ from: trans.from, symbol: sym, to: trans.to });
+    const toName = states.find(s => s.id === trans.to)?.name || '?';
+    addTraceEntry({ type: 'step', symbol: sym, from: fromName, to: toName });
+    dfaCurrentState = trans.to;
+
+  } else {
+    // NFA
+    const newStates = new Set();
+    const fromNames = [...nfaCurrentStates].map(id => states.find(s=>s.id===id)?.name);
+    const moveResult = move(nfaCurrentStates, sym);
+    const newClosure = epsClosure(moveResult);
+
+    addTraceEntry({ type: 'nfa-step', symbol: sym, fromStates: fromNames, toStates: [...newClosure].map(id=>states.find(s=>s.id===id)?.name) });
+    nfaCurrentStates = newClosure;
+    showNFAStates();
+
+    // Show epsilon closure if there were epsilon transitions
+    const epsTransExist = transitions.some(t => t.symbol === 'ε');
+    if (epsTransExist) {
+      showEpsClosure([...newClosure].map(id => states.find(s=>s.id===id)?.name));
+    }
+  }
+
+  simStep++;
+  if (simStep >= simInput.length) {
+    finishSim();
+    return;
+  }
+
+  renderGraph();
+  updateStatesList();
+}
+
+function finishSim() {
+  updateProgress(simInput.length);
+
+  let accepted = false;
+  let finalStates = [];
+
+  if (mode === 'DFA') {
+    if (dfaCurrentState !== null) {
+      const s = states.find(st => st.id === dfaCurrentState);
+      accepted = s?.isAccept || false;
+      if (s) finalStates = [s.name];
+    }
+  } else {
+    // NFA: accepted if any current state is accepting
+    finalStates = [...nfaCurrentStates]
+      .map(id => states.find(s=>s.id===id))
+      .filter(s => s?.isAccept)
+      .map(s => s.name);
+    accepted = finalStates.length > 0;
+  }
+
+  const resultBox = document.getElementById('result-box');
+  const resultLabel = document.getElementById('result-label');
+  const resultDetail = document.getElementById('result-detail');
+
+  resultBox.className = `result-box ${accepted ? 'accepted' : 'rejected'}`;
+  resultLabel.className = `result-label ${accepted ? 'accepted' : 'rejected'}`;
+  resultLabel.textContent = accepted ? '✓ ACCEPTED' : '✗ REJECTED';
+  resultDetail.textContent = accepted
+    ? `Final state${finalStates.length>1?'s':''}: {${finalStates.join(', ')}}`
+    : `String "${simInput}" rejected${mode==='DFA'&&dfaCurrentState===null?' — dead state':' — no accepting state reached'}`;
+
+  addTraceEntry({ type: accepted ? 'accept' : 'reject', finalStates });
+
+  stopAutoplay();
+  document.getElementById('btn-step').disabled = true;
+  document.getElementById('btn-autoplay').disabled = true;
+
+  renderGraph();
+  updateStatesList();
+
+  setStatus(accepted ? `✓ Accepted · Final: {${finalStates.join(', ')}}` : `✗ Rejected · String not in language`);
+}
+
+function resetSim() {
+  stopAutoplay();
+  simActive = false;
+  simStep = 0;
+  simLog = [];
+  dfaCurrentState = null;
+  nfaCurrentStates = new Set();
+
+  document.getElementById('result-box').className = 'result-box';
+  document.getElementById('trace-log').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⌛</div><div>No simulation yet</div></div>';
+  document.getElementById('sim-progress').innerHTML = '';
+  document.getElementById('btn-step').disabled = true;
+  document.getElementById('btn-autoplay').disabled = true;
+  document.getElementById('btn-reset').disabled = true;
+  document.getElementById('nfa-current-states').classList.add('hidden');
+  document.getElementById('eps-closure-box').classList.remove('visible');
+
+  renderGraph();
+  updateStatesList();
+  setStatus(`${states.length} state${states.length!==1?'s':''} · ${transitions.length} transition${transitions.length!==1?'s':''} · Mode: ${mode}`);
+}
+
+function toggleAutoplay() {
+  if (autoplayTimer) {
+    stopAutoplay();
+  } else {
+    document.getElementById('btn-autoplay').textContent = '⏸ Pause';
+    document.getElementById('btn-autoplay').classList.add('btn-red');
+    const speed = parseInt(document.getElementById('speed-slider').value);
+    const delay = [800, 600, 400, 250, 120][speed - 1];
+    autoplayTimer = setInterval(() => {
+      if (simStep >= simInput.length) { stopAutoplay(); finishSim(); return; }
+      stepSim();
+    }, delay);
+  }
+}
+
+function stopAutoplay() {
+  if (autoplayTimer) {
+    clearInterval(autoplayTimer);
+    autoplayTimer = null;
+  }
+  const btn = document.getElementById('btn-autoplay');
+  btn.textContent = '▶ Play';
+  btn.classList.remove('btn-red');
+}
+
+// ================== NFA ENGINE ==================
+function epsClosure(stateSet) {
+  const closure = new Set(stateSet);
+  const stack = [...stateSet];
+
+  while (stack.length > 0) {
+    const s = stack.pop();
+    const epsTrans = transitions.filter(t => t.from === s && t.symbol === 'ε');
+    epsTrans.forEach(t => {
+      if (!closure.has(t.to)) {
+        closure.add(t.to);
+        stack.push(t.to);
+      }
+    });
+  }
+
+  return closure;
+}
+
+function move(stateSet, symbol) {
+  const result = new Set();
+  stateSet.forEach(s => {
+    transitions.filter(t => t.from === s && t.symbol === symbol)
+      .forEach(t => result.add(t.to));
+  });
+  return result;
+}
+
+function showNFAStates() {
+  const el = document.getElementById('nfa-current-states');
+  if (mode !== 'NFA') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+
+  const stateNames = [...nfaCurrentStates].map(id => {
+    const s = states.find(st => st.id === id);
+    return { name: s?.name || '?', isAccept: s?.isAccept || false };
+  });
+
+  el.innerHTML = '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:JetBrains Mono,monospace;">Active states:</div>' +
+    stateNames.map(s => `<span class="nfa-state-pill${s.isAccept?' accepting':''}">${s.name}</span>`).join('');
+}
+
+function showEpsClosure(names) {
+  const el = document.getElementById('eps-closure-box');
+  document.getElementById('eps-closure-content').textContent = `{${names.join(', ')}}`;
+  el.classList.add('visible');
+}
+
+// ================== TRACE LOG ==================
+function addTraceEntry(entry) {
+  const log = document.getElementById('trace-log');
+  if (log.querySelector('.empty-state')) log.innerHTML = '';
+
+  const div = document.createElement('div');
+  div.className = 'trace-entry';
+
+  let content = '';
+  const step = simStep;
+
+  if (entry.type === 'start') {
+    if (mode === 'DFA') {
+      content = `<span class="trace-state">${entry.state}</span> <span style="color:var(--text3)">← start</span>`;
+    } else {
+      content = `ε-closure: {<span class="trace-state">${(entry.nfaStates||[]).join(', ')}</span>} <span style="color:var(--text3)">← start</span>`;
+    }
+  } else if (entry.type === 'step') {
+    content = `<span class="trace-state">${entry.from}</span> <span style="color:var(--text3)">─</span><span class="trace-sym">${entry.symbol}</span><span style="color:var(--text3)">→</span> <span class="trace-next">${entry.to}</span>`;
+  } else if (entry.type === 'nfa-step') {
+    content = `{<span class="trace-state">${(entry.fromStates||[]).join(', ')}</span>} <span style="color:var(--text3)">─</span><span class="trace-sym">${entry.symbol}</span><span style="color:var(--text3)">→</span> {<span class="trace-next">${(entry.toStates||[]).join(', ')}</span>}`;
+  } else if (entry.type === 'dead') {
+    content = `<span class="trace-state">${entry.from}</span> <span style="color:var(--text3)">─</span><span class="trace-sym">${entry.symbol}</span><span style="color:var(--text3)">→</span> <span class="trace-reject">∅ (dead)</span>`;
+  } else if (entry.type === 'accept') {
+    content = `<span class="trace-next">✓ ACCEPTED</span> <span style="color:var(--text3)">in {${entry.finalStates.join(', ')}}</span>`;
+  } else if (entry.type === 'reject') {
+    content = `<span class="trace-reject">✗ REJECTED</span>`;
+  }
+
+  div.innerHTML = `<span class="trace-step">${step}</span><span class="trace-content">${content}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ================== PROGRESS ==================
+function updateProgress(currentIdx) {
+  const el = document.getElementById('sim-progress');
+  if (simInput.length === 0) { el.innerHTML = '<span class="info-text">ε (empty string)</span>'; return; }
+
+  el.innerHTML = simInput.split('').map((ch, i) => {
+    let cls = '';
+    if (i < currentIdx) cls = 'done';
+    else if (i === currentIdx) cls = 'active';
+    return `<span class="progress-sym ${cls}">${ch}</span>`;
+  }).join('');
+}
+
+// ================== EXAMPLES ==================
+function loadExample(name) {
+  clearAll(true);
+  stateIdCounter = 0;
+
+  if (name === 'ends01') {
+    setMode('DFA');
+    // DFA that accepts strings ending in "01"
+    states = [
+      { id: 0, name: 'q0', isStart: true, isAccept: false, x: 180, y: 250 },
+      { id: 1, name: 'q1', isStart: false, isAccept: false, x: 380, y: 250 },
+      { id: 2, name: 'q2', isStart: false, isAccept: true, x: 580, y: 250 },
+    ];
+    transitions = [
+      { from: 0, symbol: '0', to: 1 },
+      { from: 0, symbol: '1', to: 0 },
+      { from: 1, symbol: '0', to: 1 },
+      { from: 1, symbol: '1', to: 2 },
+      { from: 2, symbol: '0', to: 1 },
+      { from: 2, symbol: '1', to: 0 },
+    ];
+    stateIdCounter = 3;
+    document.getElementById('sim-input').value = '001';
+
+  } else if (name === 'even0') {
+    setMode('DFA');
+    // DFA: even number of 0s
+    states = [
+      { id: 0, name: 'even', isStart: true, isAccept: true, x: 250, y: 250 },
+      { id: 1, name: 'odd', isStart: false, isAccept: false, x: 500, y: 250 },
+    ];
+    transitions = [
+      { from: 0, symbol: '0', to: 1 },
+      { from: 0, symbol: '1', to: 0 },
+      { from: 1, symbol: '0', to: 0 },
+      { from: 1, symbol: '1', to: 1 },
+    ];
+    stateIdCounter = 2;
+    document.getElementById('sim-input').value = '0011';
+
+  } else if (name === 'nfa01') {
+    setMode('NFA');
+    // NFA that accepts strings containing "01"
+    states = [
+      { id: 0, name: 'q0', isStart: true, isAccept: false, x: 160, y: 250 },
+      { id: 1, name: 'q1', isStart: false, isAccept: false, x: 370, y: 250 },
+      { id: 2, name: 'q2', isStart: false, isAccept: true, x: 580, y: 250 },
+    ];
+    transitions = [
+      { from: 0, symbol: '0', to: 0 },
+      { from: 0, symbol: '1', to: 0 },
+      { from: 0, symbol: '0', to: 1 },
+      { from: 1, symbol: '1', to: 2 },
+      { from: 2, symbol: '0', to: 2 },
+      { from: 2, symbol: '1', to: 2 },
+    ];
+    stateIdCounter = 3;
+    document.getElementById('sim-input').value = '1001';
+
+  } else if (name === 'nfaEps') {
+    setMode('NFA');
+    // ε-NFA: (ab)* | a
+    states = [
+      { id: 0, name: 'q0', isStart: true, isAccept: false, x: 120, y: 250 },
+      { id: 1, name: 'q1', isStart: false, isAccept: false, x: 300, y: 160 },
+      { id: 2, name: 'q2', isStart: false, isAccept: true, x: 480, y: 160 },
+      { id: 3, name: 'q3', isStart: false, isAccept: false, x: 300, y: 340 },
+      { id: 4, name: 'q4', isStart: false, isAccept: true, x: 480, y: 340 },
+    ];
+    transitions = [
+      { from: 0, symbol: 'ε', to: 1 },
+      { from: 0, symbol: 'ε', to: 3 },
+      { from: 1, symbol: 'a', to: 2 },
+      { from: 2, symbol: 'b', to: 1 },
+      { from: 3, symbol: 'a', to: 4 },
+    ];
+    stateIdCounter = 5;
+    document.getElementById('sim-input').value = 'ab';
+  }
+
+  renderGraph();
+  updateUI();
+}
+
+// ================== SAVE / LOAD ==================
+function saveJSON() {
+  const data = { mode, states, transitions };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fa-${mode.toLowerCase()}-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      clearAll(true);
+      mode = data.mode || 'DFA';
+      states = data.states || [];
+      transitions = data.transitions || [];
+      stateIdCounter = Math.max(0, ...states.map(s => s.id + 1));
+      setMode(mode);
+      renderGraph();
+      updateUI();
+    } catch { alert('Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ================== CLEAR ==================
+function clearAll(silent) {
+  if (!silent && !confirm('Clear all states and transitions?')) return;
+  resetSim();
+  states = [];
+  transitions = [];
+  stateIdCounter = 0;
+  selectedState = null;
+  renderGraph();
+  updateUI();
+}
+
+// ================== MODALS ==================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ================== TOOLTIP ==================
+function showTooltip(event, text) {
+  const tt = document.getElementById('tooltip');
+  tt.textContent = text;
+  tt.style.display = 'block';
+  tt.style.whiteSpace = 'pre-line';
+  moveTooltip(event);
+}
+
+function moveTooltip(event) {
+  const tt = document.getElementById('tooltip');
+  tt.style.left = (event.clientX + 12) + 'px';
+  tt.style.top = (event.clientY - 10) + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// ================== STATUS ==================
+function setStatus(msg) {
+  document.getElementById('status-bar').textContent = msg;
+}
+
+// ================== TOOL ==================
+function setTool(tool) {
+  currentTool = tool;
+  document.getElementById('tool-select').classList.toggle('active', tool === 'select');
+  document.getElementById('tool-move').classList.toggle('active', tool === 'move');
+}
+
+// ================== RESIZE ==================
+window.addEventListener('resize', () => {
+  const rect = document.getElementById('fa-canvas').getBoundingClientRect();
+  width = rect.width;
+  height = rect.height;
+  renderGraph();
+});
+
+// ================== BOOT ==================
+window.addEventListener('load', () => {
+  init();
+  loadExample('ends01');
+});
+</script>
+</body>
+</html>
