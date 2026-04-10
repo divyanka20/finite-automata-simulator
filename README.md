@@ -1,4 +1,5 @@
 Finite Automata Simulator
+
 Features:
 •	Build automata visually: add/edit/delete states and transitions
 •	Supports DFA (strict one transition per symbol) and NFA (multiple transitions + ε)
