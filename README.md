@@ -26,10 +26,9 @@ Running a simulation
 5.	The result (ACCEPTED or REJECTED) is shown when the string is fully consumed
 
 Importing and exporting
-•	Click Export to download the current automaton as a .json file
-•	Click Import to load a previously saved automaton
+1.	Click Export to download the current automaton as a .json file
+2.	Click Import to load a previously saved automaton
 
 Tech Stack:
-•	Graph rendering: D3.js v7
-•	Logic & UI: Vanilla JS, HTML, CSS
-	
+1.	Graph rendering: D3.js v7
+2.	Logic & UI: Vanilla JS, HTML, CSS
