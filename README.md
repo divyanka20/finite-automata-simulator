@@ -11,6 +11,7 @@ Features:
 8.	Four built-in examples to get started instantly
 
 Usage:
+
 Building an automaton
 1.	Double-click the canvas to add a state, or use the Add State button in the left panel
 2.	Set one state as the start state and one or more as accepting states
