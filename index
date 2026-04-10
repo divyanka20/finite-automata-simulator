@@ -978,7 +978,7 @@
     </div>
     <div class="trace-log" id="trace-log">
       <div class="empty-state">
-        <div class="empty-state-icon">⌛</div>
+        <div class="empty-state-icon"></div>
         <div>No simulation yet</div>
       </div>
     </div>
@@ -988,7 +988,7 @@
 <!-- Add State Modal -->
 <div class="modal-overlay" id="add-state-modal">
   <div class="modal">
-    <div class="modal-title">➕ Add State</div>
+    <div class="modal-title"> Add State</div>
     <div class="form-group">
       <label class="form-label">State Name</label>
       <input class="input-field" id="new-state-name" placeholder="e.g. q0, q1, A, B" style="width:100%;"
@@ -1015,7 +1015,7 @@
 <!-- Edit State Modal -->
 <div class="modal-overlay" id="edit-state-modal">
   <div class="modal">
-    <div class="modal-title">✏️ Edit State</div>
+    <div class="modal-title"> Edit State</div>
     <div class="form-group">
       <label class="form-label">State Name</label>
       <input class="input-field" id="edit-state-name" placeholder="State name" style="width:100%;"
