@@ -1,14 +1,14 @@
 Finite Automata Simulator
 
 Features:
-•	Build automata visually: add/edit/delete states and transitions
-•	Supports DFA (strict one transition per symbol) and NFA (multiple transitions + ε)
-•	Step-by-step or auto-play simulation with adjustable speed
-•	Live ε-closure computation and active state tracking for NFA
-•	Color-coded graph: start state, accepting states, and current state highlighted
-•	Full transition trace log for every simulation run
-•	Export/import automata as JSON (canvas positions preserved)
-•	Four built-in examples to get started instantly
+1.	Build automata visually: add/edit/delete states and transitions
+2.	Supports DFA (strict one transition per symbol) and NFA (multiple transitions + ε)
+3.	Step-by-step or auto-play simulation with adjustable speed
+4.	Live ε-closure computation and active state tracking for NFA
+5.	Color-coded graph: start state, accepting states, and current state highlighted
+6.	Full transition trace log for every simulation run
+7.	Export/import automata as JSON (canvas positions preserved)
+8.	Four built-in examples to get started instantly
 
 Usage:
 Building an automaton
